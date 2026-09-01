@@ -1,4 +1,4 @@
-# Detecção de Vulnerabilidades em Código-Fonte
+# Security code analyzer
 
 Projeto de aprendizado de máquina voltado à identificação automatizada de vulnerabilidades de segurança em código-fonte C/C++.
 
