@@ -1,0 +1,27 @@
+[
+  {
+    "func": "void copy_input(char *input) {\n    char buffer[10];\n    strcpy(buffer, input);\n}",
+    "target": 1,
+    "comment": "Buffer overflow vulnerability - no bounds checking"
+  },
+  {
+    "func": "void safe_copy(char *input) {\n    char buffer[10];\n    strncpy(buffer, input, sizeof(buffer) - 1);\n    buffer[sizeof(buffer) - 1] = '\\0';\n}",
+    "target": 0,
+    "comment": "Safe - uses strncpy with bounds checking"
+  },
+  {
+    "func": "void execute_query(char *user_input) {\n    char query[256];\n    sprintf(query, \"SELECT * FROM users WHERE name='%s'\", user_input);\n    execute_sql(query);\n}",
+    "target": 1,
+    "comment": "SQL injection vulnerability"
+  },
+  {
+    "func": "int process_data(int *array, int size, int index) {\n    return array[index];\n}",
+    "target": 1,
+    "comment": "Array index out of bounds - no validation"
+  },
+  {
+    "func": "int safe_process(int *array, int size, int index) {\n    if (index >= 0 && index < size) {\n        return array[index];\n    }\n    return -1;\n}",
+    "target": 0,
+    "comment": "Safe - validates array index"
+  }
+]
