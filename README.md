@@ -1,149 +1,156 @@
-# Security code analyzer
+# Security Code Analyzer
 
-Projeto de aprendizado de máquina voltado à identificação automatizada de vulnerabilidades de segurança em código-fonte C/C++.
+Ferramenta experimental de análise de segurança desenvolvida em Python para identificar possíveis vulnerabilidades em funções escritas em C e C++ por meio de aprendizado de máquina.
 
-A solução utiliza o modelo Transformer **GraphCodeBERT**, pré-treinado para compreensão de código, como base para a classificação binária de funções entre código seguro e código potencialmente vulnerável.
+O sistema utiliza o **GraphCodeBERT** para transformar o código-fonte em representações vetoriais e, a partir dessas representações, realizar uma classificação entre código potencialmente seguro e código potencialmente vulnerável.
 
-O projeto também compara diferentes estratégias de pooling para avaliar como a representação produzida pelo modelo influencia o desempenho da classificação.
+## Sobre o projeto
 
-## Visão geral
+A identificação de vulnerabilidades diretamente no código-fonte é uma tarefa que pode exigir uma análise detalhada de grandes quantidades de código.
 
-A revisão manual de código pode ser um processo demorado, principalmente em projetos de grande escala. Este projeto investiga a utilização de modelos de aprendizado profundo como uma camada adicional de análise durante a identificação de possíveis vulnerabilidades.
+Este projeto explora uma abordagem baseada em Machine Learning na qual um modelo especializado em código aprende padrões presentes em exemplos previamente classificados.
 
-O processo pode ser resumido em quatro etapas:
+O objetivo não é substituir ferramentas tradicionais de análise de segurança, mas demonstrar como modelos de linguagem para código podem ser utilizados como uma camada complementar de análise.
+
+## Fluxo de processamento
+
+O funcionamento pode ser dividido em quatro etapas:
 
 ```text
-Código-fonte
+Codigo C/C++
      |
      v
-Tokenização
+Tokenizacao
      |
      v
 GraphCodeBERT
      |
      v
-Estratégia de Pooling
+Representacao do codigo
      |
      v
-Classificação
+Classificador
      |
-     +---- 0: Seguro
+     +--------> Seguro
      |
-     +---- 1: Vulnerável
+     +--------> Vulneravel
 ```
 
-O modelo recebe uma função como entrada e produz uma classificação binária indicando se o código apresenta características associadas a uma vulnerabilidade.
+Durante o treinamento, diferentes estratégias são utilizadas para transformar a saída do Transformer em uma representação adequada para o classificador.
 
-## Arquitetura
+## Estratégias de representação
 
-O projeto utiliza o GraphCodeBERT como extrator de características. A saída do Transformer é processada por diferentes estratégias de pooling antes de ser encaminhada ao classificador.
+O projeto permite comparar cinco métodos de pooling:
 
-Foram implementadas cinco abordagens:
+### Mean Pooling
 
-| Estratégia        | Descrição                                                        |
-| ----------------- | ---------------------------------------------------------------- |
-| Mean Pooling      | Calcula a média das representações dos tokens                    |
-| Max Pooling       | Seleciona os maiores valores das representações                  |
-| CLS Pooling       | Utiliza a representação associada ao token CLS                   |
-| AvgMax Pooling    | Combina as representações obtidas por média e máximo             |
-| Attention Pooling | Utiliza pesos de atenção para determinar a relevância dos tokens |
+Calcula a média das representações produzidas para os tokens do código.
 
-A comparação entre essas estratégias permite avaliar diferentes formas de transformar a representação gerada pelo Transformer em uma entrada adequada para classificação.
+### Max Pooling
 
-## Métricas
+Seleciona os maiores valores encontrados nas representações dos tokens.
 
-O treinamento utiliza diferentes métricas para avaliar o desempenho dos modelos:
+### CLS Pooling
+
+Utiliza a representação associada ao token de classificação.
+
+### AvgMax Pooling
+
+Combina informações obtidas por Mean Pooling e Max Pooling.
+
+### Attention Pooling
+
+Utiliza pesos de atenção para determinar quais partes da representação possuem maior relevância para a classificação.
+
+A comparação dessas abordagens permite avaliar como diferentes formas de agregação das informações influenciam o resultado final do modelo.
+
+## Classificação
+
+O sistema utiliza uma classificação binária:
+
+```text
+0 = Seguro
+1 = Vulneravel
+```
+
+Os exemplos de treinamento são armazenados em formato JSON, contendo o código da função e seu respectivo rótulo.
+
+Exemplo:
+
+```json
+[
+    {
+        "func": "void example() { ... }",
+        "target": 0
+    },
+    {
+        "func": "void example() { ... }",
+        "target": 1
+    }
+]
+```
+
+O arquivo `sample_data.json` fornece exemplos do formato esperado pelo sistema.
+
+## Avaliação
+
+O desempenho do modelo é analisado utilizando métricas comuns em problemas de classificação:
 
 * Precision
 * Recall
 * F1-Score
 * Matriz de Confusão
 
-Além da avaliação, o projeto implementa mecanismos de early stopping e salvamento dos melhores checkpoints durante o treinamento.
+Também são utilizados mecanismos de **early stopping** e armazenamento dos melhores checkpoints durante o treinamento.
 
-## Dataset
+Essas métricas permitem avaliar não apenas a quantidade de classificações corretas, mas também a capacidade do modelo de identificar corretamente exemplos vulneráveis.
 
-Os dados utilizados seguem uma estrutura simples baseada em funções de código-fonte e seus respectivos rótulos.
-
-O formato esperado é:
-
-```json
-[
-    {
-        "func": "void vulnerable() { char buf[10]; gets(buf); }",
-        "target": 1
-    },
-    {
-        "func": "void safe() { char buf[10]; fgets(buf, 10, stdin); }",
-        "target": 0
-    }
-]
-```
-
-Os valores de `target` representam:
+## Organização
 
 ```text
-0 = Seguro
-1 = Vulnerável
+Security-code-analyzer/
+|
++-- vulnerability_detection_improved.py
+|       Treinamento e avaliacao dos modelos
+|
++-- inference_example.py
+|       Exemplo de inferencia
+|
++-- sample_data.json
+|       Dados de exemplo
+|
++-- requirements.txt
+|       Dependencias Python
+|
++-- setup.sh
+|       Configuracao auxiliar
+|
++-- README.md
+        Documentacao
 ```
 
-O projeto utiliza uma versão parcial do dataset associado ao **Devign**, podendo também ser adaptado para outros conjuntos de dados ou bases próprias de código rotulado.
+## Ambiente
 
-## Estrutura do projeto
+O projeto utiliza:
 
-```text
-vulnerability-detection-codet5/
-│
-├── vulnerability_detection_improved.py
-├── inference_example.py
-├── sample_data.json
-├── requirements.txt
-├── setup.sh
-└── README.md
-```
+| Componente    | Funcao                                |
+| ------------- | ------------------------------------- |
+| Python        | Desenvolvimento da aplicacao          |
+| PyTorch       | Treinamento dos modelos               |
+| Transformers  | Utilizacao de modelos Transformer     |
+| GraphCodeBERT | Representacao do codigo-fonte         |
+| JSON          | Armazenamento dos exemplos            |
+| CUDA          | Aceleracao por GPU, quando disponivel |
 
-### Principais arquivos
+Uma GPU compatível com CUDA é recomendada para reduzir o tempo de treinamento, embora o projeto também possa ser executado utilizando CPU.
 
-**vulnerability_detection_improved.py**
+## Configuração
 
-Contém a implementação principal do treinamento, avaliação e comparação das estratégias de pooling.
-
-**inference_example.py**
-
-Fornece um exemplo de utilização de um modelo treinado para realizar previsões sobre novas funções.
-
-**sample_data.json**
-
-Contém exemplos de dados utilizados para demonstrar o formato esperado pelo sistema.
-
-**requirements.txt**
-
-Lista as dependências necessárias para executar o projeto.
-
-**setup.sh**
-
-Script auxiliar para configuração do ambiente.
-
-## Requisitos
-
-Para executar o projeto são necessários:
-
-* Python 3.8 ou superior
-* PyTorch
-* Transformers
-* Bibliotecas listadas em `requirements.txt`
-* 8 GB ou mais de RAM
-* GPU compatível com CUDA recomendada para treinamento
-
-O projeto também pode ser executado em CPU, embora o treinamento possa ser significativamente mais lento.
-
-## Instalação
-
-Clone o repositório:
+Clone este repositório:
 
 ```bash
-git clone https://github.com/ShamaSharma/vulnerability-detection-codet5.git
-cd vulnerability-detection-codet5
+git clone https://github.com/SeraphimBite/Security-code-analyzer.git
+cd Security-code-analyzer
 ```
 
 Crie um ambiente virtual:
@@ -172,21 +179,21 @@ pip install -r requirements.txt
 
 ## Treinamento
 
-Com o ambiente configurado e o dataset preparado, execute:
+Com o ambiente configurado, o treinamento pode ser iniciado com:
 
 ```bash
 python vulnerability_detection_improved.py
 ```
 
-O processo de treinamento executa os modelos utilizando as diferentes estratégias de pooling e armazena os melhores checkpoints.
+O programa executa o treinamento das diferentes estratégias de pooling e permite comparar os resultados obtidos por cada abordagem.
 
-Os resultados também podem ser utilizados para comparar o desempenho das abordagens utilizadas.
+Os melhores estados dos modelos são preservados durante o processo para utilização posterior.
 
 ## Inferência
 
-Após o treinamento, o modelo pode ser utilizado para analisar novas funções.
+Depois de treinado, o modelo pode ser utilizado para analisar novas funções.
 
-Exemplo:
+Um exemplo básico:
 
 ```python
 from inference_example import predict_vulnerability
@@ -200,72 +207,74 @@ void test() {
 
 result = predict_vulnerability(code)
 
-print(f"Vulnerable: {result['is_vulnerable']}")
-print(f"Confidence: {result['confidence']:.2%}")
+print(result["is_vulnerable"])
+print(result["confidence"])
 ```
 
-A saída contém uma classificação e uma estimativa de confiança produzida pelo modelo.
+O resultado fornece uma classificação juntamente com uma estimativa de confiança.
 
-A confiança não deve ser interpretada como uma garantia de que o código é seguro ou vulnerável. O resultado deve ser utilizado como suporte para processos adicionais de análise e revisão.
+Essa estimativa deve ser interpretada como uma saída probabilística do modelo e não como uma comprovação definitiva da existência ou ausência de uma vulnerabilidade.
 
-## Aplicações
+## Dataset
 
-A abordagem utilizada neste projeto pode servir como base para diferentes aplicações relacionadas à segurança de software, incluindo:
+O projeto trabalha com exemplos de funções de código-fonte acompanhadas por rótulos de segurança.
 
-* Análise automatizada de código-fonte
-* Auxílio em processos de Code Review
-* Pesquisa em segurança de software
-* Classificação de código utilizando modelos Transformer
-* Experimentação com Machine Learning aplicado à Cybersecurity
-* Desenvolvimento de ferramentas de análise estática baseadas em IA
-* Integração futura com pipelines de CI/CD
+A estrutura foi preparada para trabalhar com conjuntos de dados voltados à detecção de vulnerabilidades, incluindo dados no formato utilizado em pesquisas relacionadas ao **Devign**.
 
-## Possíveis extensões
+O sistema também pode ser adaptado para conjuntos de dados próprios, desde que os exemplos sigam a estrutura esperada pelo treinamento.
 
-O projeto pode ser expandido para investigar diferentes modelos, datasets e técnicas de classificação.
+## Casos de uso
 
-Algumas possibilidades incluem:
+A implementação pode ser utilizada como base para:
 
-* Comparação entre GraphCodeBERT, CodeBERT e CodeT5
-* Utilização de datasets maiores
-* Classificação por categorias específicas de vulnerabilidade
-* Análise de arquivos completos
-* Desenvolvimento de uma API para inferência
-* Criação de uma interface web
-* Integração com ferramentas de CI/CD
-* Geração de explicações para as previsões
-* Combinação de análise estática tradicional com modelos de aprendizado profundo
+* Estudos de Machine Learning aplicado à segurança;
+* Classificação automatizada de código;
+* Pesquisa em detecção de vulnerabilidades;
+* Experimentação com Transformers para código;
+* Desenvolvimento de ferramentas de apoio a Code Review;
+* Avaliação de diferentes estratégias de representação de código.
 
 ## Limitações
 
-O modelo não substitui ferramentas especializadas de análise de segurança nem revisão realizada por profissionais.
+O modelo possui limitações inerentes a sistemas de aprendizado de máquina.
 
-Como qualquer sistema de classificação baseado em aprendizado de máquina, os resultados podem apresentar falsos positivos e falsos negativos. O desempenho também depende diretamente da qualidade, diversidade e representatividade dos dados utilizados durante o treinamento.
+Uma previsão pode resultar em:
 
-Consequentemente, as previsões devem ser consideradas como um mecanismo de apoio à análise e não como uma confirmação definitiva da existência ou ausência de uma vulnerabilidade.
+* falso positivo;
+* falso negativo;
+* baixa confiança;
+* desempenho inferior em códigos diferentes daqueles utilizados no treinamento.
 
-## Objetivo do projeto
+A qualidade do modelo também depende da quantidade, diversidade e qualidade dos exemplos utilizados no treinamento.
 
-O objetivo principal é investigar a aplicação de modelos Transformer especializados em código para a detecção automatizada de vulnerabilidades e avaliar diferentes estratégias de representação para essa tarefa.
+Por esse motivo, os resultados devem ser utilizados como **auxílio à análise**, e não como substituição de ferramentas especializadas ou revisão de segurança.
 
-O projeto combina conceitos de:
+## Possíveis evoluções
 
-```text
-Machine Learning
-Deep Learning
-Transformers
-Processamento de Código
-Cybersecurity
-Classificação de Texto
-Análise de Vulnerabilidades
-```
+O projeto pode ser ampliado com diferentes técnicas e componentes, incluindo:
 
-## Referências
+* utilização de datasets maiores;
+* classificação por tipo de vulnerabilidade;
+* comparação com outros modelos especializados em código;
+* análise de arquivos completos;
+* criação de uma API de inferência;
+* desenvolvimento de uma interface web;
+* integração com pipelines de CI/CD;
+* geração de explicações para as previsões;
+* combinação com ferramentas tradicionais de análise estática.
 
-* GraphCodeBERT — modelo Transformer pré-treinado para compreensão de código.
-* Devign — conjunto de dados utilizado para pesquisas relacionadas à detecção de vulnerabilidades.
-* Hugging Face Transformers — biblioteca utilizada para trabalhar com modelos Transformer.
+## Referências técnicas
+
+O projeto utiliza tecnologias e conceitos provenientes de pesquisas e ferramentas públicas relacionadas a:
+
+* GraphCodeBERT;
+* Transformers;
+* PyTorch;
+* detecção de vulnerabilidades em código;
+* aprendizado profundo aplicado à análise de software.
+
+Essas referências representam as tecnologias utilizadas pelo projeto e não indicam que este repositório seja uma cópia ou um fork de outro projeto.
 
 ## Licença
 
-Consulte a licença disponibilizada no repositório antes de utilizar, modificar ou redistribuir o projeto.
+Consulte os arquivos de licença presentes neste repositório antes de utilizar, modificar ou redistribuir o código.
